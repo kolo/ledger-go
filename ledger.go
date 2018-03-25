@@ -3,110 +3,68 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"sync"
-	"time"
-
-	"github.com/shopspring/decimal"
+	"regexp"
+	"strings"
 )
 
-type ledgerEntry struct {
-	creditAccount string
-	debitAccount  string
-	performedAt   time.Time
-	amount        decimal.Decimal
+var (
+	yearRx  = regexp.MustCompile("^\\d{4}$")
+	monthRx = regexp.MustCompile("^[0-1][0-9]$")
+	dayRx   = regexp.MustCompile("^[0-3][0-9]$")
+)
+
+func read(ledgerDir string) []string {
+	paths := lookup(ledgerDir, yearRx, monthRx, dayRx)
+
+	records := []string{}
+	for _, path := range paths {
+		date := pathToDate(ledgerDir, path)
+		records = append(records, readLedgerFile(path, date)...)
+	}
+	return records
 }
 
-func readLedgerEntries(dirs []string) ([]*ledgerEntry, error) {
-	entries := []*ledgerEntry{}
-
-	out := []<-chan string{}
-	for _, dir := range dirs {
-		out = append(out, readLedgerDir(dir))
-	}
-
-	var n int64
-	for range merge(out...) {
-		n++
-	}
-	fmt.Println(n)
-
-	return entries, nil
-}
-
-func readLedgerDir(dir string) <-chan string {
-	out := make(chan string)
-	go func() {
-		err := filepath.Walk(dir, func(p string, fi os.FileInfo, err error) error {
+func lookup(root string, patterns ...*regexp.Regexp) []string {
+	matches := []string{root}
+	for _, pattern := range patterns {
+		n := len(matches)
+		for _, path := range matches {
+			entries, err := ioutil.ReadDir(path)
 			if err != nil {
-				return err
+				continue
 			}
-
-			if !fi.IsDir() {
-				lines, err := readLedgerFile(p)
-				if err != nil {
-					return err
-				}
-
-				for _, l := range lines {
-					out <- l
+			for _, entry := range entries {
+				if pattern.MatchString(entry.Name()) {
+					matches = append(matches, filepath.Join(path, entry.Name()))
 				}
 			}
-
-			return nil
-		})
-		if err != nil {
-			fmt.Println(err)
 		}
+		matches = matches[n:]
+	}
 
-		close(out)
-	}()
-
-	return out
+	return matches
 }
 
-func readLedgerFile(path string) ([]string, error) {
+func pathToDate(basepath string, path string) string {
+	rel, _ := filepath.Rel(basepath, path)
+	return strings.Replace(rel, string(filepath.Separator), "-", -1)
+}
+
+func readLedgerFile(path string, date string) []string {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return []string{}
 	}
 
-	lines := []string{}
+	sc := bufio.NewScanner(bytes.NewReader(b))
 
-	scanner := bufio.NewScanner(bytes.NewReader(b))
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	records := []string{}
+	for sc.Scan() {
+		r := strings.Join([]string{date, sc.Text()}, ",")
+		records = append(records, r)
 	}
 
-	return lines, nil
-}
-
-func merge(cs ...<-chan string) <-chan string {
-	var wg sync.WaitGroup
-	out := make(chan string)
-
-	output := func(c <-chan string) {
-		for s := range c {
-			out <- s
-		}
-		wg.Done()
-	}
-
-	wg.Add(len(cs))
-	for _, c := range cs {
-		go output(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
+	return records
 }
