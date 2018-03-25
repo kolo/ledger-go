@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 )
 
 const (
+	configFilename  = "config.json"
 	ledgerDirEnvKey = "LEDGER_DIR"
 )
 
@@ -17,7 +19,12 @@ func main() {
 		exitWithErr(errors.New(fmt.Sprintf("%s is not defined", ledgerDirEnvKey)))
 	}
 
-	fmt.Println(len(read(ledgerDir)))
+	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
+	if err != nil {
+		exitWithErr(err)
+	}
+
+	total(config.Accounts, read(ledgerDir))
 }
 
 func exitWithErr(err error) {

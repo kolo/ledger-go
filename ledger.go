@@ -1,70 +1,42 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"io/ioutil"
-	"path/filepath"
-	"regexp"
+	"fmt"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 var (
-	yearRx  = regexp.MustCompile("^\\d{4}$")
-	monthRx = regexp.MustCompile("^[0-1][0-9]$")
-	dayRx   = regexp.MustCompile("^[0-3][0-9]$")
+	minusOne = decimal.NewFromFloat(-1.0)
 )
 
-func read(ledgerDir string) []string {
-	paths := lookup(ledgerDir, yearRx, monthRx, dayRx)
-
-	records := []string{}
-	for _, path := range paths {
-		date := pathToDate(ledgerDir, path)
-		records = append(records, readLedgerFile(path, date)...)
+func total(accounts []string, records []string) {
+	totals := map[string]decimal.Decimal{}
+	for _, account := range accounts {
+		totals[account] = decimal.Zero
 	}
-	return records
-}
 
-func lookup(root string, patterns ...*regexp.Regexp) []string {
-	matches := []string{root}
-	for _, pattern := range patterns {
-		n := len(matches)
-		for _, path := range matches {
-			entries, err := ioutil.ReadDir(path)
-			if err != nil {
-				continue
-			}
-			for _, entry := range entries {
-				if pattern.MatchString(entry.Name()) {
-					matches = append(matches, filepath.Join(path, entry.Name()))
-				}
-			}
+	for _, r := range records {
+		values := strings.Split(r, ",")
+
+		creditAccount := values[1]
+		debitAccount := values[2]
+		amount, err := decimal.NewFromString(values[3])
+		if err != nil {
+			fmt.Printf("Can't decode: %s\n", r)
 		}
-		matches = matches[n:]
+
+		if _, ok := totals[creditAccount]; ok {
+			totals[creditAccount] = totals[creditAccount].Sub(amount)
+		}
+
+		if _, ok := totals[debitAccount]; ok {
+			totals[debitAccount] = totals[debitAccount].Add(amount)
+		}
 	}
 
-	return matches
-}
-
-func pathToDate(basepath string, path string) string {
-	rel, _ := filepath.Rel(basepath, path)
-	return strings.Replace(rel, string(filepath.Separator), "-", -1)
-}
-
-func readLedgerFile(path string, date string) []string {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return []string{}
+	for account, total := range totals {
+		fmt.Printf("%s: %s\n", account, total.String())
 	}
-
-	sc := bufio.NewScanner(bytes.NewReader(b))
-
-	records := []string{}
-	for sc.Scan() {
-		r := strings.Join([]string{date, sc.Text()}, ",")
-		records = append(records, r)
-	}
-
-	return records
 }
