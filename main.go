@@ -24,7 +24,7 @@ func main() {
 		exitWithErr(err)
 	}
 
-	total(config.Accounts, read(ledgerDir))
+	balance(config.Accounts, read(ledgerDir))
 }
 
 func exitWithErr(err error) {
