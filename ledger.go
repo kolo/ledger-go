@@ -1,13 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
 
+type account struct {
+	name  string
+	asset bool
+}
+
 type recordType int8
+
+type record struct {
+	debit      *account
+	credit     *account
+	recordedAt time.Time
+	amount     decimal.Decimal
+}
+
+func (r *record) recordType() recordType {
+	return recordType(ctoi[r.credit.asset] | dtoi[r.debit.asset])
+}
+
+type recordReader interface {
+	Next() *record
+}
 
 const (
 	recordTypeInvalid recordType = iota
@@ -19,64 +39,55 @@ const (
 var (
 	ctoi = map[bool]int8{true: 2}
 	dtoi = map[bool]int8{true: 1}
-
-	minusOne = decimal.NewFromFloat(-1.0)
 )
 
-// balance prints balance of each account in the ledger.
-func balance(assets []string, records []string) {
-	assetsBalances := map[string]decimal.Decimal{}
-	expensesBalances := map[string]decimal.Decimal{}
-	incomesBalances := map[string]decimal.Decimal{}
+type simpleReader struct {
+	accounts map[string]*account
+	records  []string
 
-	assetsMap := map[string]bool{}
-	for _, asset := range assets {
-		assetsMap[asset] = true
+	cur int
+}
+
+func (r *simpleReader) Next() *record {
+	if r.cur == len(r.records) {
+		// end of list
+		return nil
 	}
 
-	for _, record := range records {
-		values := strings.Split(record, ",")
-		creditAccount := values[1]
-		debitAccount := values[2]
-		amount, _ := decimal.NewFromString(values[3])
-		// calculate record type
-		_, isCreditAnAsset := assetsMap[creditAccount]
-		_, isDebitAnAsset := assetsMap[debitAccount]
-		rt := recordType(ctoi[isCreditAnAsset] | dtoi[isDebitAnAsset])
+	values := strings.Split(r.records[r.cur], ",")
+	r.cur = r.cur + 1
 
-		switch rt {
-		case recordTypeExpense:
-			updateBalance(creditAccount, assetsBalances, amount.Mul(minusOne))
-			updateBalance(debitAccount, expensesBalances, amount)
-		case recordTypeIncome:
-			updateBalance(creditAccount, incomesBalances, amount.Mul(minusOne))
-			updateBalance(debitAccount, assetsBalances, amount)
-		case recordTypeTransfer:
-			updateBalance(creditAccount, assetsBalances, amount.Mul(minusOne))
-			updateBalance(debitAccount, assetsBalances, amount)
-		}
-	}
-
-	fmt.Println("Assets:")
-	for _, asset := range assets {
-		fmt.Printf("  %s: %s\n", asset, assetsBalances[asset].String())
-	}
-
-	fmt.Println("Income:")
-	for account, balance := range incomesBalances {
-		fmt.Printf("  %s: %s\n", account, balance.String())
-	}
-
-	fmt.Println("Expenses:")
-	for account, balance := range expensesBalances {
-		fmt.Printf("  %s: %s\n", account, balance.String())
+	amount, _ := decimal.NewFromString(values[3])
+	return &record{
+		credit: r.account(values[1]),
+		debit:  r.account(values[2]),
+		amount: amount,
 	}
 }
 
-func updateBalance(account string, balances map[string]decimal.Decimal, amount decimal.Decimal) {
-	if _, registered := balances[account]; !registered {
-		balances[account] = decimal.Zero
+func (r *simpleReader) account(name string) *account {
+	ac, found := r.accounts[name]
+	if !found {
+		ac = &account{
+			name:  name,
+			asset: false,
+		}
 	}
 
-	balances[account] = balances[account].Add(amount)
+	return ac
+}
+
+func newSimpleReader(assets []string, records []string) *simpleReader {
+	accounts := map[string]*account{}
+	for _, asset := range assets {
+		accounts[asset] = &account{
+			name:  asset,
+			asset: true,
+		}
+	}
+
+	return &simpleReader{
+		accounts: accounts,
+		records:  records,
+	}
 }
