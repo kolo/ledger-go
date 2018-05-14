@@ -1,42 +1,93 @@
 package main
 
 import (
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
 
-var (
-	minusOne = decimal.NewFromFloat(-1.0)
+type account struct {
+	name  string
+	asset bool
+}
+
+type recordType int8
+
+type record struct {
+	debit      *account
+	credit     *account
+	recordedAt time.Time
+	amount     decimal.Decimal
+}
+
+func (r *record) recordType() recordType {
+	return recordType(ctoi[r.credit.asset] | dtoi[r.debit.asset])
+}
+
+type recordReader interface {
+	Next() *record
+}
+
+const (
+	recordTypeInvalid recordType = iota
+	recordTypeIncome
+	recordTypeExpense
+	recordTypeTransfer
 )
 
-func total(accounts []string, records []string) {
-	totals := map[string]decimal.Decimal{}
-	for _, account := range accounts {
-		totals[account] = decimal.Zero
+var (
+	ctoi = map[bool]int8{true: 2}
+	dtoi = map[bool]int8{true: 1}
+)
+
+type simpleReader struct {
+	accounts map[string]*account
+	records  []string
+
+	cur int
+}
+
+func (r *simpleReader) Next() *record {
+	if r.cur == len(r.records) {
+		// end of list
+		return nil
 	}
 
-	for _, r := range records {
-		values := strings.Split(r, ",")
+	values := strings.Split(r.records[r.cur], ",")
+	r.cur = r.cur + 1
 
-		creditAccount := values[1]
-		debitAccount := values[2]
-		amount, err := decimal.NewFromString(values[3])
-		if err != nil {
-			fmt.Printf("Can't decode: %s\n", r)
-		}
+	amount, _ := decimal.NewFromString(values[3])
+	return &record{
+		credit: r.account(values[1]),
+		debit:  r.account(values[2]),
+		amount: amount,
+	}
+}
 
-		if _, ok := totals[creditAccount]; ok {
-			totals[creditAccount] = totals[creditAccount].Sub(amount)
-		}
-
-		if _, ok := totals[debitAccount]; ok {
-			totals[debitAccount] = totals[debitAccount].Add(amount)
+func (r *simpleReader) account(name string) *account {
+	ac, found := r.accounts[name]
+	if !found {
+		ac = &account{
+			name:  name,
+			asset: false,
 		}
 	}
 
-	for account, total := range totals {
-		fmt.Printf("%s: %s\n", account, total.String())
+	return ac
+}
+
+func newSimpleReader(assets []string, records []string) *simpleReader {
+	accounts := map[string]*account{}
+	for _, asset := range assets {
+		accounts[asset] = &account{
+			name:  asset,
+			asset: true,
+		}
+	}
+
+	return &simpleReader{
+		accounts: accounts,
+		records:  records,
 	}
 }
