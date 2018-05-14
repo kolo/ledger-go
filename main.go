@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -14,17 +15,26 @@ const (
 )
 
 func main() {
-	ledgerDir := os.Getenv(ledgerDirEnvKey)
-	if ledgerDir == "" {
-		exitWithErr(errors.New(fmt.Sprintf("%s is not defined", ledgerDirEnvKey)))
+	cmd := &cobra.Command{
+		Use: "ledger",
+		Run: func(*cobra.Command, []string) {
+			ledgerDir := os.Getenv(ledgerDirEnvKey)
+			if ledgerDir == "" {
+				exitWithErr(errors.New(fmt.Sprintf("%s is not defined", ledgerDirEnvKey)))
+			}
+
+			config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
+			if err != nil {
+				exitWithErr(err)
+			}
+
+			balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
+		},
 	}
 
-	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
-	if err != nil {
+	if err := cmd.Execute(); err != nil {
 		exitWithErr(err)
 	}
-
-	balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
 }
 
 func exitWithErr(err error) {
