@@ -58,10 +58,12 @@ func (r *simpleReader) Next() *record {
 	r.cur = r.cur + 1
 
 	amount, _ := decimal.NewFromString(values[3])
+	recordedAt, _ := time.Parse("2006-01-02", values[0])
 	return &record{
-		credit: r.account(values[1]),
-		debit:  r.account(values[2]),
-		amount: amount,
+		credit:     r.account(values[1]),
+		debit:      r.account(values[2]),
+		amount:     amount,
+		recordedAt: recordedAt,
 	}
 }
 
