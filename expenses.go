@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kolo/ledger-go/datetime"
 	"github.com/shopspring/decimal"
 )
 
@@ -19,6 +20,15 @@ func (e expenses) update(r *record) {
 	}
 }
 
+func (e expenses) total() decimal.Decimal {
+	total := decimal.Zero
+	for _, bi := range e {
+		total = total.Add(bi.total)
+	}
+
+	return total
+}
+
 func expensesReport(rd recordReader, assets []string) {
 	expenses := expenses{}
 	for _, asset := range assets {
@@ -31,7 +41,7 @@ func expensesReport(rd recordReader, assets []string) {
 		}
 	}
 
-	t, _ := time.Parse(time.RFC3339, "2018-05-21T00:00:00+02:00")
+	t := datetime.BeginningOfWeek(time.Now())
 	for {
 		r := rd.Next()
 		if r == nil {
@@ -44,6 +54,7 @@ func expensesReport(rd recordReader, assets []string) {
 	}
 
 	for _, bi := range expenses {
-		fmt.Printf("%s: %v\n", bi.account.name, bi.total.StringFixed(2))
+		fmt.Printf("%5s: %6s\n", bi.account.name, bi.total.StringFixed(2))
 	}
+	fmt.Printf("Total: %v\n", expenses.total())
 }
