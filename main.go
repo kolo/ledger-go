@@ -21,17 +21,21 @@ func main() {
 			cmd.Help()
 		},
 	}
-	cmd.AddCommand(balanceCommand())
-	cmd.AddCommand(expensesCommand())
+	cmd.AddCommand(newCommand("balance", func(ledgerDir string, config *userConfig) {
+		balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
+	}))
+	cmd.AddCommand(newCommand("expense", func(ledgerDir string, config *userConfig) {
+		expensesReport(newSimpleReader(config.Accounts, read(ledgerDir)), config.Accounts)
+	}))
 
 	if err := cmd.Execute(); err != nil {
 		exitWithErr(err)
 	}
 }
 
-func balanceCommand() *cobra.Command {
+func newCommand(name string, run func(string, *userConfig)) *cobra.Command {
 	return &cobra.Command{
-		Use: "balance",
+		Use: name,
 		Run: func(*cobra.Command, []string) {
 			ledgerDir := os.Getenv(ledgerDirEnvKey)
 			if ledgerDir == "" {
@@ -43,26 +47,7 @@ func balanceCommand() *cobra.Command {
 				exitWithErr(err)
 			}
 
-			balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
-		},
-	}
-}
-
-func expensesCommand() *cobra.Command {
-	return &cobra.Command{
-		Use: "expenses",
-		Run: func(*cobra.Command, []string) {
-			ledgerDir := os.Getenv(ledgerDirEnvKey)
-			if ledgerDir == "" {
-				exitWithErr(errors.New(fmt.Sprintf("%s is not defined", ledgerDirEnvKey)))
-			}
-
-			config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
-			if err != nil {
-				exitWithErr(err)
-			}
-
-			expensesReport(newSimpleReader(config.Accounts, read(ledgerDir)), config.Accounts)
+			run(ledgerDir, config)
 		},
 	}
 }
