@@ -6,7 +6,46 @@ import (
 
 	"github.com/kolo/ledger-go/datetime"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cobra"
 )
+
+// expensesCommand implements "expenses" command.
+type expensesCommand struct {
+	cmd *cobra.Command
+
+	from *dateFlag
+}
+
+func newExpensesCommand() *cobra.Command {
+	c := &expensesCommand{
+		from: &dateFlag{},
+	}
+
+	c.cmd = &cobra.Command{
+		Use: "expenses [OPTIONS]",
+		Run: func(*cobra.Command, []string) {
+			c.balance()
+		},
+	}
+	c.addFlags()
+
+	return c.Cmd()
+}
+
+// Cmd initializes an instance of cobra.Command.
+func (c *expensesCommand) Cmd() *cobra.Command {
+	return c.cmd
+}
+
+func (c *expensesCommand) addFlags() {
+	flags := c.cmd.Flags()
+
+	flags.VarP(c.from, "from", "", "set a starting date")
+}
+
+func (c *expensesCommand) balance() {
+	fmt.Println(c.from.value.Format(iso8601Date))
+}
 
 type expenses map[string]*balanceItem
 
