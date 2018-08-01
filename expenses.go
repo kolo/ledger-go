@@ -24,7 +24,7 @@ func newExpensesCommand() *cobra.Command {
 	c.cmd = &cobra.Command{
 		Use: "expenses [OPTIONS]",
 		Run: func(*cobra.Command, []string) {
-			c.balance()
+			c.expenses()
 		},
 	}
 	c.addFlags()
@@ -43,11 +43,11 @@ func (c *expensesCommand) addFlags() {
 	flags.VarP(c.from, "from", "", "set a starting date")
 }
 
-func (c *expensesCommand) balance() {
+func (c *expensesCommand) expenses() {
 	fmt.Println(c.from.value.Format(iso8601Date))
 }
 
-type expenses map[string]*balanceItem
+type expenses map[string]*reportItem
 
 func (e expenses) update(r *record) {
 	if r.recordType() != recordTypeExpense {
@@ -71,7 +71,7 @@ func (e expenses) total() decimal.Decimal {
 func expensesReport(rd recordReader, assets []string) {
 	expenses := expenses{}
 	for _, asset := range assets {
-		expenses[asset] = &balanceItem{
+		expenses[asset] = &reportItem{
 			account: &account{
 				name:  asset,
 				asset: true,
