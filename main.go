@@ -24,9 +24,7 @@ func main() {
 	cmd.AddCommand(newCommand("balance", func(ledgerDir string, config *userConfig) {
 		balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
 	}))
-	cmd.AddCommand(newCommand("expense", func(ledgerDir string, config *userConfig) {
-		expensesReport(newSimpleReader(config.Accounts, read(ledgerDir)), config.Accounts)
-	}))
+	cmd.AddCommand((&ExpensesCommand{}).Cmd())
 
 	if err := cmd.Execute(); err != nil {
 		exitWithErr(err)
