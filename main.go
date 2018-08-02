@@ -21,9 +21,6 @@ func main() {
 			cmd.Help()
 		},
 	}
-	cmd.AddCommand(newCommand("balance", func(ledgerDir string, config *userConfig) {
-		balanceReport(newSimpleReader(config.Accounts, read(ledgerDir)))
-	}))
 	cmd.AddCommand(newExpensesCommand())
 
 	if err := cmd.Execute(); err != nil {

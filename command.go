@@ -2,15 +2,9 @@ package main
 
 import (
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
 const iso8601Date = "2006-01-02"
-
-type command interface {
-	Cmd() *cobra.Command
-}
 
 // dateFlag represents a date flag value encoded in iso8601 date format.
 type dateFlag struct {

@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/kolo/ledger-go/datetime"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +26,9 @@ func newExpensesCommand() *cobra.Command {
 	c.cmd = &cobra.Command{
 		Use: "expenses [OPTIONS]",
 		Run: func(*cobra.Command, []string) {
-			c.expenses()
+			if err := c.expenses(); err != nil {
+				exitWithErr(err)
+			}
 		},
 	}
 	c.addFlags()
@@ -43,8 +47,21 @@ func (c *expensesCommand) addFlags() {
 	flags.VarP(c.from, "from", "", "set a starting date")
 }
 
-func (c *expensesCommand) expenses() {
-	fmt.Println(c.from.value.Format(iso8601Date))
+func (c *expensesCommand) expenses() error {
+	ledgerDir := os.Getenv(ledgerDirEnvKey)
+	if ledgerDir == "" {
+		return errors.Errorf("missing environment variable - %s", ledgerDirEnvKey)
+	}
+
+	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
+	if err != nil {
+		return errors.Wrap(err, "can't read configuration")
+	}
+
+	reader := newSimpleReader(config.Accounts, read(ledgerDir))
+	expensesReport(reader, config.Accounts, c.from.value)
+
+	return nil
 }
 
 type expenses map[string]*reportItem
@@ -68,7 +85,7 @@ func (e expenses) total() decimal.Decimal {
 	return total
 }
 
-func expensesReport(rd recordReader, assets []string) {
+func expensesReport(rd recordReader, assets []string, from time.Time) {
 	expenses := expenses{}
 	for _, asset := range assets {
 		expenses[asset] = &reportItem{
@@ -80,14 +97,13 @@ func expensesReport(rd recordReader, assets []string) {
 		}
 	}
 
-	t := datetime.BeginningOfWeek(time.Now())
 	for {
 		r := rd.Next()
 		if r == nil {
 			break
 		}
 
-		if r.recordedAt.After(t) {
+		if r.recordedAt.After(from) {
 			expenses.update(r)
 		}
 	}
