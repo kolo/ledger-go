@@ -25,10 +25,8 @@ func newExpensesCommand() *cobra.Command {
 
 	c.cmd = &cobra.Command{
 		Use: "expenses [OPTIONS]",
-		Run: func(*cobra.Command, []string) {
-			if err := c.expenses(); err != nil {
-				exitWithErr(err)
-			}
+		RunE: func(*cobra.Command, []string) error {
+			return c.expenses()
 		},
 	}
 	c.addFlags()
@@ -64,29 +62,9 @@ func (c *expensesCommand) expenses() error {
 	return nil
 }
 
-type expenses map[string]*reportItem
-
-func (e expenses) update(r *record) {
-	if r.recordType() != recordTypeExpense {
-		return
-	}
-
-	if bi, found := e[r.credit.name]; found {
-		bi.increase(r.amount)
-	}
-}
-
-func (e expenses) total() decimal.Decimal {
-	total := decimal.Zero
-	for _, bi := range e {
-		total = total.Add(bi.total)
-	}
-
-	return total
-}
-
 func expensesReport(rd recordReader, assets []string, from time.Time) {
-	expenses := expenses{}
+	expenses := report{}
+
 	for _, asset := range assets {
 		expenses[asset] = &reportItem{
 			account: &account{
@@ -103,13 +81,20 @@ func expensesReport(rd recordReader, assets []string, from time.Time) {
 			break
 		}
 
-		if r.recordedAt.After(from) {
-			expenses.update(r)
+		if r.recordedAt.Equal(from) || r.recordedAt.After(from) {
+			if r.recordType() != recordTypeExpense {
+				continue
+			}
+
+			if ri, found := expenses[r.credit.name]; found {
+				ri.increase(r.amount)
+			}
 		}
+
 	}
 
-	for _, bi := range expenses {
-		fmt.Printf("%5s: %6s\n", bi.account.name, bi.total.StringFixed(2))
+	for _, ri := range expenses {
+		fmt.Printf("%5s: %6s\n", ri.account.name, ri.total.StringFixed(2))
 	}
 	fmt.Printf("Total: %v\n", expenses.total())
 }

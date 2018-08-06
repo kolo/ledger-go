@@ -7,30 +7,39 @@ type reportItem struct {
 	total   decimal.Decimal
 }
 
-func (bi *reportItem) increase(amount decimal.Decimal) {
-	bi.total = bi.total.Add(amount)
+func (ri *reportItem) increase(amount decimal.Decimal) {
+	ri.total = ri.total.Add(amount)
 }
 
-func (bi *reportItem) decrease(amount decimal.Decimal) {
-	bi.total = bi.total.Sub(amount)
+func (ri *reportItem) decrease(amount decimal.Decimal) {
+	ri.total = ri.total.Sub(amount)
 }
 
 type report map[string]*reportItem
 
-func (b report) update(r *record) {
-	b.item(r.credit).decrease(r.amount)
-	b.item(r.debit).increase(r.amount)
+func (r report) update(rec *record) {
+	r.item(rec.credit).decrease(rec.amount)
+	r.item(rec.debit).increase(rec.amount)
 }
 
-func (b report) item(ac *account) *reportItem {
-	item, found := b[ac.name]
+func (r report) item(ac *account) *reportItem {
+	item, found := r[ac.name]
 	if !found {
 		item = &reportItem{
 			account: ac,
 			total:   decimal.Zero,
 		}
-		b[ac.name] = item
+		r[ac.name] = item
 	}
 
 	return item
+}
+
+func (r report) total() decimal.Decimal {
+	total := decimal.Zero
+	for _, ri := range r {
+		total = total.Add(ri.total)
+	}
+
+	return total
 }
