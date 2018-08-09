@@ -2,45 +2,63 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cobra"
 )
 
-type balanceItem struct {
-	account *account
-	total   decimal.Decimal
+type balanceCommand struct {
+	cmd *cobra.Command
 }
 
-func (bi *balanceItem) increase(amount decimal.Decimal) {
-	bi.total = bi.total.Add(amount)
-}
-
-func (bi *balanceItem) decrease(amount decimal.Decimal) {
-	bi.total = bi.total.Sub(amount)
-}
-
-type balance map[string]*balanceItem
-
-func (b balance) update(r *record) {
-	b.item(r.credit).decrease(r.amount)
-	b.item(r.debit).increase(r.amount)
-}
-
-func (b balance) item(ac *account) *balanceItem {
-	item, found := b[ac.name]
-	if !found {
-		item = &balanceItem{
-			account: ac,
-			total:   decimal.Zero,
-		}
-		b[ac.name] = item
+func newBalanceCommand() *cobra.Command {
+	c := &balanceCommand{}
+	c.cmd = &cobra.Command{
+		Use: "balance",
+		RunE: func(*cobra.Command, []string) error {
+			return c.balance()
+		},
 	}
 
-	return item
+	return c.Cmd()
 }
 
-func balanceReport(rd recordReader) {
-	balance := balance{}
+func (c *balanceCommand) Cmd() *cobra.Command {
+	return c.cmd
+}
+
+func (c *balanceCommand) balance() error {
+	ledgerDir := os.Getenv(ledgerDirEnvKey)
+	if ledgerDir == "" {
+		return errors.Errorf("missing environment variable - %s", ledgerDirEnvKey)
+	}
+
+	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
+	if err != nil {
+		return errors.Wrap(err, "can't read configuration")
+	}
+
+	reader := newSimpleReader(config.Accounts, read(ledgerDir))
+	balanceReport(reader, config.Accounts)
+
+	return nil
+}
+
+func balanceReport(rd recordReader, assets []string) {
+	balance := report{}
+
+	for _, asset := range assets {
+		balance[asset] = &reportItem{
+			account: &account{
+				name:  asset,
+				asset: true,
+			},
+			total: decimal.Zero,
+		}
+	}
 
 	for {
 		r := rd.Next()
@@ -48,12 +66,15 @@ func balanceReport(rd recordReader) {
 			break
 		}
 
-		balance.update(r)
+		if ri, ok := balance[r.credit.name]; ok {
+			ri.decrease(r.amount)
+		}
+		if ri, ok := balance[r.debit.name]; ok {
+			ri.increase(r.amount)
+		}
 	}
 
-	for _, bi := range balance {
-		if bi.account.asset {
-			fmt.Printf("%s: %v\n", bi.account.name, bi.total)
-		}
+	for _, ri := range balance {
+		fmt.Printf("%s: %v\n", ri.account.name, ri.total)
 	}
 }
