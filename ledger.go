@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,6 +24,16 @@ type record struct {
 
 func (r *record) recordType() recordType {
 	return recordType(ctoi[r.credit.asset] | dtoi[r.debit.asset])
+}
+
+func (r *record) String() string {
+	return fmt.Sprintf(
+		"%q,%q,%s,%s",
+		r.debit.name,
+		r.credit.name,
+		r.amount.String(),
+		r.recordedAt.Format(time.RubyDate),
+	)
 }
 
 type recordReader interface {
