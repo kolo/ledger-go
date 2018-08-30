@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -15,8 +15,11 @@ import (
 type expensesCommand struct {
 	cmd *cobra.Command
 
-	from *dateFlag
+	from   *dateFlag
+	source *string
 }
+
+type filterFunc func(*record) *record
 
 func newExpensesCommand() *cobra.Command {
 	c := &expensesCommand{
@@ -43,6 +46,8 @@ func (c *expensesCommand) addFlags() {
 	flags := c.cmd.Flags()
 
 	flags.VarP(c.from, "from", "", "set a starting date")
+	c.source = flags.String("source", "", "choose source accounts")
+
 }
 
 func (c *expensesCommand) expenses() error {
@@ -57,12 +62,37 @@ func (c *expensesCommand) expenses() error {
 	}
 
 	reader := newSimpleReader(config.Accounts, read(ledgerDir))
-	expensesReport(reader, config.Accounts, c.from.value)
+	expensesReport(reader, config.Accounts, c.filter())
 
 	return nil
 }
 
-func expensesReport(rd recordReader, assets []string, from time.Time) {
+func (c *expensesCommand) filter() filterFunc {
+	from := c.from.value
+	source := *c.source
+
+	return func(r *record) *record {
+		if r == nil {
+			return nil
+		}
+
+		if r.recordType() != recordTypeExpense {
+			return nil
+		}
+
+		if r.recordedAt.Before(from) {
+			return nil
+		}
+
+		if source != "" && !strings.HasPrefix(r.debit.name, source) {
+			return nil
+		}
+
+		return r
+	}
+}
+
+func expensesReport(rd recordReader, assets []string, filter filterFunc) {
 	expenses := report{}
 
 	for _, asset := range assets {
@@ -81,16 +111,14 @@ func expensesReport(rd recordReader, assets []string, from time.Time) {
 			break
 		}
 
-		if r.recordedAt.Equal(from) || r.recordedAt.After(from) {
-			if r.recordType() != recordTypeExpense {
-				continue
-			}
-
-			if ri, found := expenses[r.credit.name]; found {
-				ri.increase(r.amount)
-			}
+		r = filter(r)
+		if r == nil {
+			continue
 		}
 
+		if ri, found := expenses[r.credit.name]; found {
+			ri.increase(r.amount)
+		}
 	}
 
 	for _, ri := range expenses {
