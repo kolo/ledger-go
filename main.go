@@ -13,14 +13,20 @@ const (
 )
 
 func main() {
+	env, err := loadEnvironment()
+	if err != nil {
+		exitWithErr(err)
+	}
+
 	cmd := &cobra.Command{
 		Use: "ledger",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
-	cmd.AddCommand(newExpensesCommand())
-	cmd.AddCommand(newBalanceCommand())
+
+	cmd.AddCommand(newExpensesCommand(env))
+	cmd.AddCommand(newBalanceCommand(env))
 
 	if err := cmd.Execute(); err != nil {
 		exitWithErr(err)

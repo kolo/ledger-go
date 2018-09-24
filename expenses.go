@@ -2,10 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -13,21 +10,23 @@ import (
 // expensesCommand implements "expenses" command.
 type expensesCommand struct {
 	cmd *cobra.Command
+	env *environment
 
 	from *dateFlag
 }
 
 type filterFunc func(*record) *record
 
-func newExpensesCommand() *cobra.Command {
+func newExpensesCommand(env *environment) *cobra.Command {
 	c := &expensesCommand{
+		env:  env,
 		from: &dateFlag{},
 	}
 
 	c.cmd = &cobra.Command{
 		Use: "expenses [OPTIONS]",
-		RunE: func(*cobra.Command, []string) error {
-			return c.expenses()
+		Run: func(*cobra.Command, []string) {
+			c.expenses()
 		},
 	}
 	c.addFlags()
@@ -45,21 +44,8 @@ func (c *expensesCommand) addFlags() {
 	flags.VarP(c.from, "from", "", "set a starting date")
 }
 
-func (c *expensesCommand) expenses() error {
-	ledgerDir := os.Getenv(ledgerDirEnvKey)
-	if ledgerDir == "" {
-		return errors.Errorf("missing environment variable - %s", ledgerDirEnvKey)
-	}
-
-	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
-	if err != nil {
-		return errors.Wrap(err, "can't read configuration")
-	}
-
-	reader := newSimpleReader(config.Accounts, read(ledgerDir))
-	expensesReport(reader, config.Accounts, c.filter())
-
-	return nil
+func (c *expensesCommand) expenses() {
+	expensesReport(c.env.reader(), c.env.Accounts, c.filter())
 }
 
 func (c *expensesCommand) filter() filterFunc {

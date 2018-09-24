@@ -2,24 +2,22 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
 
 type balanceCommand struct {
 	cmd *cobra.Command
+	env *environment
 }
 
-func newBalanceCommand() *cobra.Command {
-	c := &balanceCommand{}
+func newBalanceCommand(env *environment) *cobra.Command {
+	c := &balanceCommand{env: env}
 	c.cmd = &cobra.Command{
 		Use: "balance",
-		RunE: func(*cobra.Command, []string) error {
-			return c.balance()
+		Run: func(*cobra.Command, []string) {
+			c.balance()
 		},
 	}
 
@@ -30,21 +28,8 @@ func (c *balanceCommand) Cmd() *cobra.Command {
 	return c.cmd
 }
 
-func (c *balanceCommand) balance() error {
-	ledgerDir := os.Getenv(ledgerDirEnvKey)
-	if ledgerDir == "" {
-		return errors.Errorf("missing environment variable - %s", ledgerDirEnvKey)
-	}
-
-	config, err := loadUserConfig(filepath.Join(ledgerDir, configFilename))
-	if err != nil {
-		return errors.Wrap(err, "can't read configuration")
-	}
-
-	reader := newSimpleReader(config.Accounts, read(ledgerDir))
-	balanceReport(reader, config.Accounts)
-
-	return nil
+func (c *balanceCommand) balance() {
+	balanceReport(c.env.reader(), c.env.Accounts)
 }
 
 func balanceReport(rd recordReader, assets []string) {
