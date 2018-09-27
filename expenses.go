@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -15,8 +14,7 @@ import (
 type expensesCommand struct {
 	cmd *cobra.Command
 
-	from   *dateFlag
-	source *string
+	from *dateFlag
 }
 
 type filterFunc func(*record) *record
@@ -44,10 +42,7 @@ func (c *expensesCommand) Cmd() *cobra.Command {
 
 func (c *expensesCommand) addFlags() {
 	flags := c.cmd.Flags()
-
 	flags.VarP(c.from, "from", "", "set a starting date")
-	c.source = flags.String("source", "", "choose source accounts")
-
 }
 
 func (c *expensesCommand) expenses() error {
@@ -69,7 +64,6 @@ func (c *expensesCommand) expenses() error {
 
 func (c *expensesCommand) filter() filterFunc {
 	from := c.from.value
-	source := *c.source
 
 	return func(r *record) *record {
 		if r == nil {
@@ -81,10 +75,6 @@ func (c *expensesCommand) filter() filterFunc {
 		}
 
 		if r.recordedAt.Before(from) {
-			return nil
-		}
-
-		if source != "" && !strings.HasPrefix(r.debit.name, source) {
 			return nil
 		}
 
