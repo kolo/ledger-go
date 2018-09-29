@@ -12,7 +12,10 @@ type expensesCommand struct {
 	cmd *cobra.Command
 	env *environment
 
-	from *dateFlag
+	// filters
+	credit *string
+	debit  *string
+	from   *dateFlag
 }
 
 type filterFunc func(*record) *record
@@ -41,15 +44,29 @@ func (c *expensesCommand) Cmd() *cobra.Command {
 
 func (c *expensesCommand) addFlags() {
 	flags := c.cmd.Flags()
+
 	flags.VarP(c.from, "from", "", "set a starting date")
+
+	c.credit = flags.StringP("credit", "", "", "filter by the credit account")
+	c.debit = flags.StringP("debit", "", "", "filter by the debit account")
 }
 
 func (c *expensesCommand) expenses() {
-	expensesReport(c.env.reader(), c.env.Accounts, c.filter())
+	expensesReport(c.env.reader(), c.assets(), c.filter())
+}
+
+func (c *expensesCommand) assets() []string {
+	credit := *c.credit
+	if credit == "" {
+		return c.env.Accounts
+	}
+
+	return []string{credit}
 }
 
 func (c *expensesCommand) filter() filterFunc {
 	from := c.from.value
+	debit := *c.debit
 
 	return func(r *record) *record {
 		if r == nil {
@@ -61,6 +78,10 @@ func (c *expensesCommand) filter() filterFunc {
 		}
 
 		if r.recordedAt.Before(from) {
+			return nil
+		}
+
+		if debit != "" && debit != r.debit.name {
 			return nil
 		}
 
@@ -98,7 +119,10 @@ func expensesReport(rd recordReader, assets []string, filter filterFunc) {
 	}
 
 	for _, ri := range expenses {
+		if ri.total.Equal(decimal.Zero) {
+			continue
+		}
 		fmt.Printf("%5s: %6s\n", ri.account.name, ri.total.StringFixed(2))
 	}
-	fmt.Printf("Total: %v\n", expenses.total())
+	fmt.Printf("Total: %6s\n", expenses.total().StringFixed(2))
 }
