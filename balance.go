@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +57,5 @@ func balanceReport(rd recordReader, assets []string) {
 		}
 	}
 
-	for _, ri := range balance {
-		fmt.Printf("%s: %v\n", ri.account.name, ri.total)
-	}
+	printReport(balance)
 }

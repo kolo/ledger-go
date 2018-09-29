@@ -1,11 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"sort"
-	"text/tabwriter"
-
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -121,27 +116,5 @@ func expensesReport(rd recordReader, assets []string, filter filterFunc) {
 		}
 	}
 
-	printExpensesReport(expenses)
-}
-
-func printExpensesReport(expenses report) {
-	// Sort accounts
-	accounts := []string{}
-	for k := range expenses {
-		accounts = append(accounts, k)
-	}
-	sort.Strings(accounts)
-
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-
-	for _, account := range accounts {
-		ri := expenses[account]
-		if !ri.total.Equal(decimal.Zero) {
-			fmt.Fprintf(w, "%s\t%s\n", ri.account.name, ri.total.StringFixed(2))
-		}
-	}
-	fmt.Fprintln(w, "-----\t")
-	fmt.Fprintf(w, "Total\t%s\n", expenses.total().StringFixed(2))
-
-	w.Flush()
+	printReport(expenses)
 }
