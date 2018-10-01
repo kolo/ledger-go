@@ -14,6 +14,9 @@ type expensesCommand struct {
 	credit *string
 	debit  *string
 	from   *dateFlag
+
+	// grouping
+	weekly *bool
 }
 
 type filterFunc func(*record) *record
@@ -47,9 +50,14 @@ func (c *expensesCommand) addFlags() {
 
 	c.credit = flags.StringP("credit", "", "", "filter by the credit account")
 	c.debit = flags.StringP("debit", "", "", "filter by the debit account")
+	c.weekly = flags.BoolP("weekly", "", false, "group expenses by week")
 }
 
 func (c *expensesCommand) expenses() {
+	if *c.weekly {
+		weeklyExpensesReport(c.env.reader(), c.assets(), c.filter())
+		return
+	}
 	expensesReport(c.env.reader(), c.assets(), c.filter())
 }
 
@@ -87,6 +95,8 @@ func (c *expensesCommand) filter() filterFunc {
 	}
 }
 
+// MAYBE: reader and filter function might be wrapped together so report function
+// doesn't need to know about filter at all.
 func expensesReport(rd recordReader, assets []string, filter filterFunc) {
 	expenses := report{}
 
