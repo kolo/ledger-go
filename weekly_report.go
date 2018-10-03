@@ -32,6 +32,10 @@ func (id weekID) after(other weekID) bool {
 	return !id.before(other)
 }
 
+func (id weekID) String() string {
+	return fmt.Sprintf("%d-%d", id.week, id.year)
+}
+
 func newWeekID(t time.Time) weekID {
 	// FIXME: t.ISOWeek() function return 52 for Jan 01 to Jan 03 and might return
 	// 1 for Dec 29 to Dec 31. This is ok for now, but should be fixed at some point.
@@ -143,7 +147,5 @@ func weeklyExpensesReport(rd recordReader, assets []string, filter filterFunc) {
 		report.update(r)
 	}
 
-	for ri := report.head; ri != nil; ri = ri.next {
-		fmt.Println(ri.id, ri.report.total())
-	}
+	printWeeklyReport(report)
 }

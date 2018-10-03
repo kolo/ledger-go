@@ -18,3 +18,8 @@ func BeginningOfWeek(t time.Time) time.Time {
 
 	return t.Add(diff)
 }
+
+// Week returns the week number for a given time.
+func Week(t time.Time) int {
+	return 0
+}
