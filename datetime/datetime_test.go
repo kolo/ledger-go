@@ -23,6 +23,13 @@ func Test_BeginningOfWeek(t *testing.T) {
 	}
 }
 
+func Test_CommercialDate(t *testing.T) {
+	base := _time("2017-01-15T00:00:00Z") // Sunday
+	for wd := 1; wd <= 7; wd++ {
+		assertEqualTime(t, base.AddDate(0, 0, wd), CommercialDate(2017, 3, wd))
+	}
+}
+
 func assertEqualTime(t *testing.T, expected, actual time.Time) {
 	if expected.Equal(actual) {
 		return

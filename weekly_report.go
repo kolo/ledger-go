@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kolo/ledger-go/datetime"
 	"github.com/shopspring/decimal"
 )
+
+const dateLayout = "02 Jan 06"
 
 type weekID struct {
 	year int
@@ -32,8 +35,14 @@ func (id weekID) after(other weekID) bool {
 	return !id.before(other)
 }
 
+func (id weekID) dates() (time.Time, time.Time) {
+	return datetime.CommercialDate(id.year, id.week, 1),
+		datetime.CommercialDate(id.year, id.week, 7)
+}
+
 func (id weekID) String() string {
-	return fmt.Sprintf("%d-%d", id.week, id.year)
+	startOfWeek, endOfWeek := id.dates()
+	return fmt.Sprintf("%s - %s", startOfWeek.Format(dateLayout), endOfWeek.Format(dateLayout))
 }
 
 func newWeekID(t time.Time) weekID {
@@ -130,6 +139,7 @@ func (rp *weeklyReport) newReport() report {
 	return r
 }
 
+// FIXME: last week of 2016 doesn't appear in the report.
 func weeklyExpensesReport(rd recordReader, assets []string, filter filterFunc) {
 	report := &weeklyReport{assets: assets}
 

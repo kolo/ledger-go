@@ -2,6 +2,8 @@ package datetime
 
 import "time"
 
+const daysInWeek = 7
+
 // BeginningOfWeek returns a new date/time which represents the start of this week.
 func BeginningOfWeek(t time.Time) time.Time {
 	currentDayNumber := 6
@@ -19,7 +21,13 @@ func BeginningOfWeek(t time.Time) time.Time {
 	return t.Add(diff)
 }
 
-// Week returns the week number for a given time.
-func Week(t time.Time) int {
-	return 0
+// CommercialDate returns a date for a given year, week and weekday. The month and
+// weekday values may be outside their ranges and will be normalized during the
+// conversion. For example weekday 8 becomes 7.
+func CommercialDate(year, week, weekday int) time.Time {
+	d := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	// TODO: implement week and weekday normalization.
+	offset := daysInWeek*(week-1) + weekday - int(d.Weekday())
+
+	return d.AddDate(0, 0, offset)
 }
