@@ -46,8 +46,6 @@ func (id weekID) String() string {
 }
 
 func newWeekID(t time.Time) weekID {
-	// FIXME: t.ISOWeek() function return 52 for Jan 01 to Jan 03 and might return
-	// 1 for Dec 29 to Dec 31. This is ok for now, but should be fixed at some point.
 	year, week := t.ISOWeek()
 	return weekID{year: year, week: week}
 }
