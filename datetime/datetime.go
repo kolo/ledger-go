@@ -1,6 +1,8 @@
 package datetime
 
-import "time"
+import (
+	"time"
+)
 
 const daysInWeek = 7
 
@@ -25,9 +27,20 @@ func BeginningOfWeek(t time.Time) time.Time {
 // weekday values may be outside their ranges and will be normalized during the
 // conversion. For example weekday 8 becomes 7.
 func CommercialDate(year, week, weekday int) time.Time {
-	d := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
-	// TODO: implement week and weekday normalization.
-	offset := daysInWeek*(week-1) + weekday - int(d.Weekday())
+	base := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	return d.AddDate(0, 0, offset)
+	baseYear, _ := base.ISOWeek()
+	if baseYear == year {
+		week = week - 1
+	}
+
+	baseWeekday := int(base.Weekday())
+	if baseWeekday == 0 {
+		baseWeekday = 7
+	}
+
+	// TODO: implement week and weekday normalization.
+	offset := daysInWeek*week + (weekday - baseWeekday)
+
+	return base.AddDate(0, 0, offset)
 }

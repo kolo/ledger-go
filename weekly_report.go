@@ -139,7 +139,6 @@ func (rp *weeklyReport) newReport() report {
 	return r
 }
 
-// FIXME: last week of 2016 doesn't appear in the report.
 func weeklyExpensesReport(rd recordReader, assets []string, filter filterFunc) {
 	report := &weeklyReport{assets: assets}
 

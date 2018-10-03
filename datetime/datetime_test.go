@@ -23,11 +23,21 @@ func Test_BeginningOfWeek(t *testing.T) {
 	}
 }
 
-func Test_CommercialDate(t *testing.T) {
-	base := _time("2017-01-15T00:00:00Z") // Sunday
-	for wd := 1; wd <= 7; wd++ {
-		assertEqualTime(t, base.AddDate(0, 0, wd), CommercialDate(2017, 3, wd))
+func Test_CommercialDate(t *testing.T) { //
+	tests := []time.Time{
+		_time("2016-01-06T00:00:00Z"), // 1 Jan 2016 belongs to week 53 of 2015
+		_time("2017-01-04T00:00:00Z"), // 1 jan 2017 belongs to week 52 of 2016
+		_time("2018-01-03T00:00:00Z"), // 1 Jan 2018 belongs to week 01 of 2018
 	}
+
+	for i, expected := range tests {
+		assertEqualTime(t, expected, CommercialDate(2016+i, 1, 3))
+	}
+}
+
+func Test_CommercialDate_3(t *testing.T) { // 2018, 01
+	expected := _time("2018-01-03T00:00:00Z")
+	assertEqualTime(t, expected, CommercialDate(2018, 1, 3))
 }
 
 func assertEqualTime(t *testing.T, expected, actual time.Time) {
