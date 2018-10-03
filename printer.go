@@ -59,7 +59,7 @@ func printWeeklyReport(r *weeklyReport) {
 	for i, total := range totals {
 		stringTotals[i] = total.StringFixed(2)
 	}
-	fmt.Fprintln(w, "-----\t")
+	fmt.Fprintf(w, "-----\t%s\n", strings.Join(make([]string, len(totals)), "\t"))
 	fmt.Fprintf(w, "Total\t%s\n", strings.Join(stringTotals, "\t"))
 
 	w.Flush()
