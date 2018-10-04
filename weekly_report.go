@@ -1,57 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kolo/ledger-go/datetime"
 	"github.com/shopspring/decimal"
 )
 
-const dateLayout = "02 Jan 06"
-
-type weekID struct {
-	year int
-	week int
-}
-
-func (id weekID) same(other weekID) bool {
-	return id.year == other.year && id.week == other.week
-}
-
-func (id weekID) before(other weekID) bool {
-	if id.year < other.year {
-		return true
-	}
-
-	if id.year == other.year && id.week < other.week {
-		return true
-	}
-
-	return false
-}
-
-func (id weekID) after(other weekID) bool {
-	return !id.before(other)
-}
-
-func (id weekID) dates() (time.Time, time.Time) {
-	return datetime.CommercialDate(id.year, id.week, 1),
-		datetime.CommercialDate(id.year, id.week, 7)
-}
-
-func (id weekID) String() string {
-	startOfWeek, endOfWeek := id.dates()
-	return fmt.Sprintf("%s - %s", startOfWeek.Format(dateLayout), endOfWeek.Format(dateLayout))
-}
-
-func newWeekID(t time.Time) weekID {
-	year, week := t.ISOWeek()
-	return weekID{year: year, week: week}
-}
-
 type weeklyReportItem struct {
-	id     weekID
+	week   datetime.Week
 	report report
 
 	next *weeklyReportItem
@@ -76,7 +33,7 @@ func (rp *weeklyReport) update(r *record) {
 func (rp *weeklyReport) findOrCreateReportItem(t time.Time) *weeklyReportItem {
 	if rp.head == nil {
 		rp.head = &weeklyReportItem{
-			id:     newWeekID(t),
+			week:   datetime.NewWeek(t),
 			report: rp.newReport(),
 		}
 
@@ -85,7 +42,7 @@ func (rp *weeklyReport) findOrCreateReportItem(t time.Time) *weeklyReportItem {
 
 	var prev, cur *weeklyReportItem
 
-	id := newWeekID(t)
+	id := datetime.NewWeek(t)
 	cur = rp.head
 	for {
 		if cur == nil {
@@ -93,11 +50,11 @@ func (rp *weeklyReport) findOrCreateReportItem(t time.Time) *weeklyReportItem {
 			break
 		}
 
-		if cur.id.same(id) {
+		if cur.week.Same(id) {
 			break
 		}
 
-		if cur.id.after(id) {
+		if cur.week.After(id) {
 			cur = rp.insert(id, prev, cur)
 			break
 		}
@@ -109,9 +66,9 @@ func (rp *weeklyReport) findOrCreateReportItem(t time.Time) *weeklyReportItem {
 	return cur
 }
 
-func (rp *weeklyReport) insert(id weekID, prev, next *weeklyReportItem) *weeklyReportItem {
+func (rp *weeklyReport) insert(w datetime.Week, prev, next *weeklyReportItem) *weeklyReportItem {
 	ri := &weeklyReportItem{
-		id:     id,
+		week:   w,
 		report: rp.newReport(),
 	}
 

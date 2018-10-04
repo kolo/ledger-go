@@ -51,7 +51,7 @@ func printWeeklyReport(r *weeklyReport) {
 			totals[i] = totals[i].Add(ri.report[asset].total)
 			subtotals = append(subtotals, ri.report[asset].total.StringFixed(2))
 		}
-		fmt.Fprintf(w, "%v\t%s\n", ri.id, strings.Join(subtotals, "\t"))
+		fmt.Fprintf(w, "%v\t%s\n", ri.week, strings.Join(subtotals, "\t"))
 	}
 
 	// Print footer
