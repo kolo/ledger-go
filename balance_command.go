@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -12,25 +14,29 @@ type balanceCommand struct {
 
 func newBalanceCommand(env *environment) *cobra.Command {
 	c := &balanceCommand{env: env}
+
+	drf := &dateRangeFilter{
+		from: &dateFlag{},
+		to:   &dateFlag{value: time.Now()},
+	}
+
 	c.cmd = &cobra.Command{
 		Use: "balance",
 		Run: func(*cobra.Command, []string) {
-			c.balance()
+			c.balance(drf.filter)
 		},
 	}
 
-	return c.Cmd()
-}
+	drf.addFlags(c.cmd.Flags())
 
-func (c *balanceCommand) Cmd() *cobra.Command {
 	return c.cmd
 }
 
-func (c *balanceCommand) balance() {
-	balanceReport(c.env.reader(), c.env.Accounts)
+func (c *balanceCommand) balance(filter filterFunc) {
+	balanceReport(c.env.reader(), c.env.Accounts, filter)
 }
 
-func balanceReport(rd recordReader, assets []string) {
+func balanceReport(rd recordReader, assets []string, filter filterFunc) {
 	balance := report{}
 
 	for _, asset := range assets {
@@ -47,6 +53,11 @@ func balanceReport(rd recordReader, assets []string) {
 		r := rd.Next()
 		if r == nil {
 			break
+		}
+
+		r = filter(r)
+		if r == nil {
+			continue
 		}
 
 		if ri, ok := balance[r.credit.name]; ok {
