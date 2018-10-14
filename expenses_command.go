@@ -13,7 +13,7 @@ type expensesCommand struct {
 	// filters
 	credit *string
 	debit  *string
-	from   *dateFlag
+	period *dateRangeFilter
 
 	// grouping
 	weekly *bool
@@ -23,8 +23,8 @@ type filterFunc func(*record) *record
 
 func newExpensesCommand(env *environment) *cobra.Command {
 	c := &expensesCommand{
-		env:  env,
-		from: &dateFlag{},
+		env:    env,
+		period: newDateRangeFilter(),
 	}
 
 	c.cmd = &cobra.Command{
@@ -46,7 +46,7 @@ func (c *expensesCommand) Cmd() *cobra.Command {
 func (c *expensesCommand) addFlags() {
 	flags := c.cmd.Flags()
 
-	flags.VarP(c.from, "from", "", "set a starting date")
+	c.period.addFlags(flags)
 
 	c.credit = flags.StringP("credit", "", "", "filter by the credit account")
 	c.debit = flags.StringP("debit", "", "", "filter by the debit account")
@@ -71,7 +71,6 @@ func (c *expensesCommand) assets() []string {
 }
 
 func (c *expensesCommand) filter() filterFunc {
-	from := c.from.value
 	debit := *c.debit
 
 	return func(r *record) *record {
@@ -83,7 +82,8 @@ func (c *expensesCommand) filter() filterFunc {
 			return nil
 		}
 
-		if r.recordedAt.Before(from) {
+		r = c.period.filter(r)
+		if r == nil {
 			return nil
 		}
 

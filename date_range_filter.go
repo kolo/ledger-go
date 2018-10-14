@@ -31,3 +31,10 @@ func (f *dateRangeFilter) start() time.Time {
 func (f *dateRangeFilter) end() time.Time {
 	return f.to.value
 }
+
+func newDateRangeFilter() *dateRangeFilter {
+	return &dateRangeFilter{
+		from: &dateFlag{},
+		to:   &dateFlag{value: time.Now()},
+	}
+}

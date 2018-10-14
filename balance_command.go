@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
@@ -15,19 +13,16 @@ type balanceCommand struct {
 func newBalanceCommand(env *environment) *cobra.Command {
 	c := &balanceCommand{env: env}
 
-	drf := &dateRangeFilter{
-		from: &dateFlag{},
-		to:   &dateFlag{value: time.Now()},
-	}
+	period := newDateRangeFilter()
 
 	c.cmd = &cobra.Command{
 		Use: "balance",
 		Run: func(*cobra.Command, []string) {
-			c.balance(drf.filter)
+			c.balance(period.filter)
 		},
 	}
 
-	drf.addFlags(c.cmd.Flags())
+	period.addFlags(c.cmd.Flags())
 
 	return c.cmd
 }
