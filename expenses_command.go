@@ -54,11 +54,14 @@ func (c *expensesCommand) addFlags() {
 }
 
 func (c *expensesCommand) expenses() {
+	reader := newFilteredReader(c.env.reader(), c.filter())
+
 	if *c.weekly {
-		weeklyExpensesReport(c.env.reader(), c.assets(), c.filter())
+		weeklyExpensesReport(reader, c.assets())
 		return
 	}
-	expensesReport(c.env.reader(), c.assets(), c.filter())
+
+	expensesReport(reader, c.assets())
 }
 
 func (c *expensesCommand) assets() []string {
@@ -95,9 +98,7 @@ func (c *expensesCommand) filter() filterFunc {
 	}
 }
 
-// MAYBE: reader and filter function might be wrapped together so report function
-// doesn't need to know about filter at all.
-func expensesReport(rd recordReader, assets []string, filter filterFunc) {
+func expensesReport(rd recordReader, assets []string) {
 	expenses := report{}
 
 	for _, asset := range assets {
@@ -114,11 +115,6 @@ func expensesReport(rd recordReader, assets []string, filter filterFunc) {
 		r := rd.Next()
 		if r == nil {
 			break
-		}
-
-		r = filter(r)
-		if r == nil {
-			continue
 		}
 
 		if ri, found := expenses[r.credit.name]; found {

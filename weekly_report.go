@@ -94,18 +94,13 @@ func (rp *weeklyReport) newReport() report {
 	return r
 }
 
-func weeklyExpensesReport(rd recordReader, assets []string, filter filterFunc) {
+func weeklyExpensesReport(rd recordReader, assets []string) {
 	report := &weeklyReport{assets: assets}
 
 	for {
 		r := rd.Next()
 		if r == nil {
 			break
-		}
-
-		r = filter(r)
-		if r == nil {
-			continue
 		}
 
 		report.update(r)

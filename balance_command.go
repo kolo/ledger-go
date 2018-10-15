@@ -28,10 +28,10 @@ func newBalanceCommand(env *environment) *cobra.Command {
 }
 
 func (c *balanceCommand) balance(filter filterFunc) {
-	balanceReport(c.env.reader(), c.env.Accounts, filter)
+	balanceReport(newFilteredReader(c.env.reader(), filter), c.env.Accounts)
 }
 
-func balanceReport(rd recordReader, assets []string, filter filterFunc) {
+func balanceReport(rd recordReader, assets []string) {
 	balance := report{}
 
 	for _, asset := range assets {
@@ -48,11 +48,6 @@ func balanceReport(rd recordReader, assets []string, filter filterFunc) {
 		r := rd.Next()
 		if r == nil {
 			break
-		}
-
-		r = filter(r)
-		if r == nil {
-			continue
 		}
 
 		if ri, ok := balance[r.credit.name]; ok {
