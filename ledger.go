@@ -36,6 +36,15 @@ func (r *record) String() string {
 	)
 }
 
+func (r *record) toArray() []string {
+	return []string{
+		r.recordedAt.Format(iso8601Date),
+		r.credit.name,
+		r.debit.name,
+		r.amount.String(),
+	}
+}
+
 type recordReader interface {
 	Next() *record
 }
