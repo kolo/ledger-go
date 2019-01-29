@@ -21,7 +21,7 @@ func newExportCommand(env *environment) *cobra.Command {
 	}
 
 	c.cmd = &cobra.Command{
-		Use: "export [OPTIONS",
+		Use: "export [OPTIONS]",
 		RunE: func(*cobra.Command, []string) error {
 			return c.export()
 		},

@@ -28,6 +28,7 @@ func main() {
 	cmd.AddCommand(newExpensesCommand(env))
 	cmd.AddCommand(newBalanceCommand(env))
 	cmd.AddCommand(newExportCommand(env))
+	cmd.AddCommand(newLogCommand(env))
 
 	if err := cmd.Execute(); err != nil {
 		exitWithErr(err)
