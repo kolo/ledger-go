@@ -169,9 +169,12 @@ func expensesReport(rd recordReader, assets []string) {
 
 	// footer
 	fmt.Fprintf(w, "=")
+	total := decimal.Zero
 	for _, column := range columns {
+		total = total.Add(totals[column])
 		fmt.Fprintf(w, "\t%s", totals[column].StringFixed(2))
 	}
+	fmt.Fprintf(w, "\t%s", total.StringFixed(2))
 	fmt.Fprintf(w, "\n")
 
 	w.Flush()
