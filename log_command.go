@@ -12,13 +12,15 @@ type logCommand struct {
 	cmd *cobra.Command
 	env *environment
 
-	period *dateRangeFilter
+	accounts *accountFilter
+	period   *dateRangeFilter
 }
 
 func newLogCommand(env *environment) *cobra.Command {
 	c := &logCommand{
-		env:    env,
-		period: newDateRangeFilter(),
+		env:      env,
+		accounts: newAccountFilter(),
+		period:   newDateRangeFilter(),
 	}
 
 	c.cmd = &cobra.Command{
@@ -34,11 +36,13 @@ func newLogCommand(env *environment) *cobra.Command {
 
 func (c *logCommand) addFlags() {
 	flags := c.cmd.Flags()
+
+	c.accounts.addFlags(flags)
 	c.period.addFlags(flags)
 }
 
 func (c *logCommand) log() {
-	rd := newFilteredReader(c.env.reader(), c.period.filter)
+	rd := newFilteredReader(c.env.reader(), c.accounts.filter, c.period.filter)
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 	for {
