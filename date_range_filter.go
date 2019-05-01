@@ -7,13 +7,13 @@ import (
 )
 
 type dateRangeFilter struct {
-	from *dateFlag
-	to   *dateFlag
+	since *dateFlag
+	until *dateFlag
 }
 
 func (f *dateRangeFilter) addFlags(flags *pflag.FlagSet) {
-	flags.VarP(f.from, "from", "", "set a start date for a reporting period")
-	flags.VarP(f.to, "to", "", "set an end date for a reporting period")
+	flags.VarP(f.since, "since", "", "set a start date for a reporting period")
+	flags.VarP(f.until, "until", "", "set an end date for a reporting period")
 }
 
 func (f *dateRangeFilter) filter(r *record) *record {
@@ -25,16 +25,16 @@ func (f *dateRangeFilter) filter(r *record) *record {
 }
 
 func (f *dateRangeFilter) start() time.Time {
-	return f.from.value
+	return f.since.value
 }
 
 func (f *dateRangeFilter) end() time.Time {
-	return f.to.value
+	return f.until.value
 }
 
 func newDateRangeFilter() *dateRangeFilter {
 	return &dateRangeFilter{
-		from: &dateFlag{},
-		to:   &dateFlag{value: time.Now()},
+		since: &dateFlag{},
+		until: &dateFlag{value: time.Now()},
 	}
 }
