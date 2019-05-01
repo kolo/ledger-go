@@ -58,24 +58,10 @@ func (c *logCommand) log() {
 			date,
 			r.credit.name,
 			r.debit.name,
-			c.formatAmount(r),
+			r.formatAmount(),
 		)
 
 	}
 
 	w.Flush()
-}
-
-func (c *logCommand) formatAmount(r *record) string {
-	var sign string
-	switch r.recordType() {
-	case recordTypeExpense:
-		sign = "-"
-	case recordTypeIncome:
-		sign = "+"
-	default:
-		sign = "="
-	}
-
-	return fmt.Sprintf("%s%s", sign, r.amount.StringFixed(2))
 }
