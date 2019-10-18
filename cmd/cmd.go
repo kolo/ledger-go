@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
+var unixEpoch = time.Unix(0, 0)
+
 type baseCmd struct {
 	accounts *accountFlags
 	period   *dateRangeFlags
