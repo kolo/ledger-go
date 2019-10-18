@@ -7,3 +7,5 @@ require (
 	github.com/spf13/cobra v0.0.4-0.20181021141114-fe5e611709b0
 	github.com/spf13/pflag v1.0.4-0.20181107220802-aea12ed67216
 )
+
+go 1.13

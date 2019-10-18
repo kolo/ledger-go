@@ -45,7 +45,7 @@ func (c *balanceCmd) Execute() error {
 		return err
 	}
 
-	ledger.PrintBalanceReport(
+	ledger.BalanceReport(
 		ledger.NewLedgerIterator(cfg.Assets, c.ledgerDir),
 		cfg.Assets,
 	)

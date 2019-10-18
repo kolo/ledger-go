@@ -2,6 +2,9 @@ package ledger
 
 import (
 	"fmt"
+	"os"
+	"sort"
+	"text/tabwriter"
 
 	"github.com/shopspring/decimal"
 )
@@ -40,9 +43,29 @@ func (report *balanceReport) total() decimal.Decimal {
 	return total
 }
 
-func PrintBalanceReport(iter RecordIterator, assets []*Account) {
-	report := newBalanceReport(assets)
+func (report *balanceReport) print() {
+	var accounts []string
+	for name := range report.balances {
+		accounts = append(accounts, name)
+	}
+	sort.Strings(accounts)
 
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	for _, account := range accounts {
+		balance := report.balances[account]
+		if balance.amount.Equal(decimal.Zero) {
+			continue
+		}
+		fmt.Fprintf(w, "%s\t%s\n", balance.account.Name, balance.amount.StringFixed(2))
+	}
+	fmt.Fprintln(w, "-----\t")
+	fmt.Fprintf(w, "Total\t%s\n", report.total().StringFixed(2))
+
+	w.Flush()
+}
+
+func BalanceReport(iter RecordIterator, assets []*Account) {
+	report := newBalanceReport(assets)
 	for {
 		r := iter.Next()
 		if r == nil {
@@ -52,5 +75,5 @@ func PrintBalanceReport(iter RecordIterator, assets []*Account) {
 		report.update(r)
 	}
 
-	fmt.Println(report.total())
+	report.print()
 }
