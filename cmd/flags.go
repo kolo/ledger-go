@@ -9,6 +9,27 @@ import (
 
 const iso8601Date = "2006-01-02"
 
+type accountFlags struct {
+	credit *string
+	debit  *string
+}
+
+func newAccountFlags() *accountFlags {
+	return &accountFlags{}
+}
+
+func (f *accountFlags) addFlags(flags *pflag.FlagSet) {
+	f.credit = flags.StringP("credit", "", "", "filter by the credit account")
+	f.debit = flags.StringP("debit", "", "", "filter by the debit account")
+}
+
+func (f *accountFlags) accountFilter() *ledger.AccountFilter {
+	return &ledger.AccountFilter{
+		Credit: *f.credit,
+		Debit:  *f.debit,
+	}
+}
+
 type dateRangeFlags struct {
 	since *dateValue
 	until *dateValue

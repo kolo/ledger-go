@@ -4,6 +4,23 @@ import "time"
 
 type RecordFilter func(*Record) *Record
 
+type AccountFilter struct {
+	Credit string
+	Debit  string
+}
+
+func (f *AccountFilter) Filter(r *Record) *Record {
+	if f.Credit != "" && r.Credit.Name != f.Credit {
+		return nil
+	}
+
+	if f.Debit != "" && r.Debit.Name != f.Debit {
+		return nil
+	}
+
+	return r
+}
+
 type DateRangeFilter struct {
 	Since time.Time
 	Until time.Time

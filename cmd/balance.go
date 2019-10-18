@@ -13,13 +13,16 @@ import (
 var unixEpoch = time.Unix(0, 0)
 
 type balanceCmd struct {
+	accounts *accountFlags
+	period   *dateRangeFlags
+
 	ledgerDir string
-	period    *dateRangeFlags
 }
 
 func newBalanceCmd() *cobra.Command {
 	balance := &balanceCmd{
-		period: newDateRangeFlags(unixEpoch, time.Now()),
+		accounts: newAccountFlags(),
+		period:   newDateRangeFlags(unixEpoch, time.Now()),
 	}
 
 	cmd := &cobra.Command{
@@ -35,8 +38,11 @@ func newBalanceCmd() *cobra.Command {
 }
 
 func (c *balanceCmd) addFlags(flags *pflag.FlagSet) {
-	flags.StringVarP(&c.ledgerDir, "ledger-dir", "", os.Getenv("LEDGER_DIR"), "set ledger directory")
+	c.accounts.addFlags(flags)
 	c.period.addFlags(flags)
+
+	flags.StringVarP(&c.ledgerDir, "ledger-dir", "", os.Getenv("LEDGER_DIR"), "set ledger directory")
+
 }
 
 func (c *balanceCmd) Execute() error {
@@ -47,6 +53,7 @@ func (c *balanceCmd) Execute() error {
 
 	var iter ledger.RecordIterator = ledger.NewFilteredIterator(
 		ledger.NewLedgerIterator(cfg.Assets, c.ledgerDir),
+		c.accounts.accountFilter().Filter,
 		c.period.dateRangeFilter().Filter,
 	)
 
