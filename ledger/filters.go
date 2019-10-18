@@ -2,6 +2,8 @@ package ledger
 
 import "time"
 
+type RecordFilter func(*Record) *Record
+
 type DateRangeFilter struct {
 	Since time.Time
 	Until time.Time

@@ -3,6 +3,7 @@ package cmd
 import (
 	"time"
 
+	"github.com/kolo/ledger-go/ledger"
 	"github.com/spf13/pflag"
 )
 
@@ -23,6 +24,13 @@ func newDateRangeFlags(since, until time.Time) *dateRangeFlags {
 func (f *dateRangeFlags) addFlags(flags *pflag.FlagSet) {
 	flags.VarP(f.since, "since", "", "set a start date for a reporting period")
 	flags.VarP(f.until, "until", "", "set an end date for a reporting period")
+}
+
+func (f *dateRangeFlags) dateRangeFilter() *ledger.DateRangeFilter {
+	return &ledger.DateRangeFilter{
+		Since: f.since.ToTime(),
+		Until: f.until.ToTime(),
+	}
 }
 
 type dateValue time.Time

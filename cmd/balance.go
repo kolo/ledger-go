@@ -45,10 +45,12 @@ func (c *balanceCmd) Execute() error {
 		return err
 	}
 
-	ledger.BalanceReport(
+	var iter ledger.RecordIterator = ledger.NewFilteredIterator(
 		ledger.NewLedgerIterator(cfg.Assets, c.ledgerDir),
-		cfg.Assets,
+		c.period.dateRangeFilter().Filter,
 	)
+
+	ledger.BalanceReport(iter, cfg.Assets)
 
 	return nil
 }
