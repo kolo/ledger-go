@@ -10,5 +10,7 @@ var ledgerCmd = &cobra.Command{
 
 func Execute() error {
 	ledgerCmd.AddCommand(newBalanceCmd())
+	ledgerCmd.AddCommand(newLogCmd())
+
 	return ledgerCmd.Execute()
 }

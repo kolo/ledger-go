@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const iso8601Date = "2006-01-02"
-
 type accountFlags struct {
 	credit *string
 	debit  *string
@@ -62,11 +60,11 @@ func newDateValue(t time.Time) *dateValue {
 }
 
 func (f *dateValue) String() string {
-	return time.Time(*f).Format(iso8601Date)
+	return time.Time(*f).Format(ledger.ISO8601Date)
 }
 
 func (f *dateValue) Set(value string) error {
-	t, err := time.Parse(iso8601Date, value)
+	t, err := time.Parse(ledger.ISO8601Date, value)
 	if err != nil {
 		return err
 	}
