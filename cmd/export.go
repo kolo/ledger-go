@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newExportCommand() *cobra.Command {
+func newExportCmd() *cobra.Command {
 	export := newBaseCmd()
 
 	cmd := &cobra.Command{

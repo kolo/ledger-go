@@ -1,0 +1,40 @@
+package cmd
+
+import (
+	"github.com/kolo/ledger-go/ledger"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
+type expensesCmd struct {
+	*baseCmd
+	weeklyReport bool
+}
+
+func newExpensesCmd() *cobra.Command {
+	expenses := &expensesCmd{
+		baseCmd: newBaseCmd(),
+	}
+
+	cmd := &cobra.Command{
+		Use: "expenses",
+		RunE: func(*cobra.Command, []string) error {
+			return expenses.Run()
+		},
+	}
+
+	expenses.addFlags(cmd.Flags())
+
+	expenses.run = func(_ *ledger.Config, iter ledger.RecordIterator) error {
+		ledger.ExpensesReport(iter)
+		return nil
+	}
+
+	return cmd
+}
+
+func (c *expensesCmd) addFlags(flags *pflag.FlagSet) {
+	c.baseCmd.addFlags(flags)
+
+	flags.BoolP("weekly", "", false, "group expenses by week")
+}
