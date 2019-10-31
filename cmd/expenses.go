@@ -25,7 +25,12 @@ func newExpensesCmd() *cobra.Command {
 
 	expenses.addFlags(cmd.Flags())
 
-	expenses.run = func(_ *ledger.Config, iter ledger.RecordIterator) error {
+	expenses.run = func(cfg *ledger.Config, iter ledger.RecordIterator) error {
+		if expenses.weeklyReport {
+			ledger.WeeklyExpensesReport(iter, cfg.Assets)
+			return nil
+		}
+
 		ledger.ExpensesReport(iter)
 		return nil
 	}
@@ -36,5 +41,5 @@ func newExpensesCmd() *cobra.Command {
 func (c *expensesCmd) addFlags(flags *pflag.FlagSet) {
 	c.baseCmd.addFlags(flags)
 
-	flags.BoolP("weekly", "", false, "group expenses by week")
+	flags.BoolVarP(&c.weeklyReport, "weekly", "", false, "group expenses by week")
 }
