@@ -2,7 +2,7 @@ package ledger
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -31,7 +31,7 @@ type weeklyReport struct {
 	head   *weeklyReportItem
 }
 
-func (r *weeklyReport) print() {
+func (r *weeklyReport) print(output io.Writer) {
 	// Sort assets
 	assets := make([]string, len(r.assets))
 	for i, asset := range r.assets {
@@ -39,7 +39,7 @@ func (r *weeklyReport) print() {
 	}
 	sort.Strings(assets)
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	w := tabwriter.NewWriter(output, 0, 0, 2, ' ', 0)
 
 	// Print header
 	fmt.Fprintf(w, "\t%s\tTotal\n", strings.Join(assets, "\t"))
@@ -176,7 +176,7 @@ func (r report) total() decimal.Decimal {
 	return total
 }
 
-func WeeklyExpensesReport(iter RecordIterator, assets []*Account) {
+func WeeklyExpensesReport(iter RecordIterator, assets []*Account, output io.Writer) {
 	iter = NewFilteredIterator(iter, filterExpenses)
 	report := &weeklyReport{assets: assets}
 
@@ -189,5 +189,5 @@ func WeeklyExpensesReport(iter RecordIterator, assets []*Account) {
 		report.update(r)
 	}
 
-	report.print()
+	report.print(output)
 }

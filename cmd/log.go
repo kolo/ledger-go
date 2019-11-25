@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"text/tabwriter"
 
 	"github.com/kolo/ledger-go/ledger"
@@ -14,23 +14,23 @@ func newLogCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use: "log",
-		RunE: func(*cobra.Command, []string) error {
-			return log.Run()
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return log.Run(cmd.OutOrStdout())
 		},
 	}
 
 	log.addFlags(cmd.Flags())
 
-	log.run = func(_ *ledger.Config, iter ledger.RecordIterator) error {
-		logRecords(iter)
+	log.run = func(_ *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
+		logRecords(iter, stdout)
 		return nil
 	}
 
 	return cmd
 }
 
-func logRecords(iter ledger.RecordIterator) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+func logRecords(iter ledger.RecordIterator, output io.Writer) {
+	w := tabwriter.NewWriter(output, 0, 0, 2, ' ', 0)
 
 	for {
 		r := iter.Next()

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/kolo/ledger-go/ledger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -18,20 +20,20 @@ func newExpensesCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use: "expenses",
-		RunE: func(*cobra.Command, []string) error {
-			return expenses.Run()
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return expenses.Run(cmd.OutOrStdout())
 		},
 	}
 
 	expenses.addFlags(cmd.Flags())
 
-	expenses.run = func(cfg *ledger.Config, iter ledger.RecordIterator) error {
+	expenses.run = func(cfg *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
 		if expenses.weeklyReport {
-			ledger.WeeklyExpensesReport(iter, cfg.Assets)
+			ledger.WeeklyExpensesReport(iter, cfg.Assets, stdout)
 			return nil
 		}
 
-		ledger.ExpensesReport(iter)
+		ledger.ExpensesReport(iter, stdout)
 		return nil
 	}
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/csv"
+	"io"
 	"os"
 
 	"github.com/kolo/ledger-go/ledger"
@@ -13,28 +14,28 @@ func newExportCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use: "export",
-		RunE: func(*cobra.Command, []string) error {
-			return export.Run()
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return export.Run(cmd.OutOrStdout())
 		},
 	}
 
 	export.addFlags(cmd.Flags())
 
-	export.run = func(_ *ledger.Config, iter ledger.RecordIterator) error {
-		return exportToCSV(iter)
+	export.run = func(_ *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
+		return exportToCSV(iter, stdout)
 	}
 
 	return cmd
 }
 
-func exportToCSV(iter ledger.RecordIterator) error {
+func exportToCSV(iter ledger.RecordIterator, output io.Writer) error {
 	f, err := os.OpenFile("ledger.csv", os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	w := csv.NewWriter(f)
+	w := csv.NewWriter(output)
 	for {
 		r := iter.Next()
 		if r == nil {

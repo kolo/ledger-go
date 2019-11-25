@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/kolo/ledger-go/ledger"
 	"github.com/spf13/cobra"
 )
@@ -10,15 +12,15 @@ func newBalanceCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use: "balance",
-		RunE: func(*cobra.Command, []string) error {
-			return balance.Run()
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return balance.Run(cmd.OutOrStdout())
 		},
 	}
 
 	balance.addFlags(cmd.Flags())
 
-	balance.run = func(cfg *ledger.Config, iter ledger.RecordIterator) error {
-		ledger.BalanceReport(iter, cfg.Assets)
+	balance.run = func(cfg *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
+		ledger.BalanceReport(iter, cfg.Assets, stdout)
 		return nil
 	}
 

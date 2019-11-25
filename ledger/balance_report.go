@@ -2,7 +2,7 @@ package ledger
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"sort"
 	"text/tabwriter"
 
@@ -43,14 +43,14 @@ func (report *balanceReport) total() decimal.Decimal {
 	return total
 }
 
-func (report *balanceReport) print() {
+func (report *balanceReport) print(output io.Writer) {
 	var accounts []string
 	for name := range report.balances {
 		accounts = append(accounts, name)
 	}
 	sort.Strings(accounts)
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	w := tabwriter.NewWriter(output, 0, 0, 2, ' ', 0)
 	for _, account := range accounts {
 		balance := report.balances[account]
 		if balance.amount.Equal(decimal.Zero) {
@@ -64,7 +64,7 @@ func (report *balanceReport) print() {
 	w.Flush()
 }
 
-func BalanceReport(iter RecordIterator, assets []*Account) {
+func BalanceReport(iter RecordIterator, assets []*Account, output io.Writer) {
 	report := newBalanceReport(assets)
 	for {
 		r := iter.Next()
@@ -75,5 +75,5 @@ func BalanceReport(iter RecordIterator, assets []*Account) {
 		report.update(r)
 	}
 
-	report.print()
+	report.print(output)
 }

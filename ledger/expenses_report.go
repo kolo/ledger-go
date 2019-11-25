@@ -2,7 +2,7 @@ package ledger
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -10,7 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func ExpensesReport(iter RecordIterator) {
+func ExpensesReport(iter RecordIterator, output io.Writer) {
 	iter = NewFilteredIterator(iter, filterExpenses)
 
 	credits, debits := map[string]struct{}{}, map[string]struct{}{}
@@ -43,7 +43,7 @@ func ExpensesReport(iter RecordIterator) {
 	}
 
 	// printing
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	w := tabwriter.NewWriter(output, 0, 0, 2, ' ', 0)
 
 	columns := []string{}
 	totals := map[string]decimal.Decimal{}

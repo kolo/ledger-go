@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,7 +18,7 @@ type baseCmd struct {
 
 	ledgerDir string
 
-	run func(*ledger.Config, ledger.RecordIterator) error
+	run func(*ledger.Config, ledger.RecordIterator, io.Writer) error
 }
 
 func newBaseCmd() *baseCmd {
@@ -35,7 +36,7 @@ func (c *baseCmd) addFlags(flags *pflag.FlagSet) {
 
 }
 
-func (c *baseCmd) Run() error {
+func (c *baseCmd) Run(stdout io.Writer) error {
 	cfg, err := ledger.LoadConfig(filepath.Join(c.ledgerDir, "config.json"))
 	if err != nil {
 		return err
@@ -47,5 +48,5 @@ func (c *baseCmd) Run() error {
 		c.period.dateRangeFilter().Filter,
 	)
 
-	return c.run(cfg, iter)
+	return c.run(cfg, iter, stdout)
 }
