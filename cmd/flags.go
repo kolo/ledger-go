@@ -4,7 +4,13 @@ import (
 	"time"
 
 	"github.com/kolo/ledger-go/ledger"
+	"github.com/shopspring/decimal"
 	"github.com/spf13/pflag"
+)
+
+const (
+	maxUint64 = ^uint64(0)
+	maxInt64  = int64(maxUint64 >> 1)
 )
 
 type accountFlags struct {
@@ -41,8 +47,8 @@ func newDateRangeFlags(since, until time.Time) *dateRangeFlags {
 }
 
 func (f *dateRangeFlags) addFlags(flags *pflag.FlagSet) {
-	flags.VarP(f.since, "since", "", "set a start date for a reporting period")
-	flags.VarP(f.until, "until", "", "set an end date for a reporting period")
+	flags.Var(f.since, "since", "set a start date for a reporting period")
+	flags.Var(f.until, "until", "set an end date for a reporting period")
 }
 
 func (f *dateRangeFlags) dateRangeFilter() *ledger.DateRangeFilter {
@@ -80,4 +86,58 @@ func (f *dateValue) Type() string {
 
 func (f *dateValue) ToTime() time.Time {
 	return time.Time(*f)
+}
+
+type amountFlags struct {
+	min *decimalValue
+	max *decimalValue
+}
+
+func newAmountFlags() *amountFlags {
+	return &amountFlags{
+		min: newDecimalValue(decimal.Zero),
+		max: newDecimalValue(decimal.NewFromInt(maxInt64)),
+	}
+}
+
+func (f *amountFlags) addFlags(flags *pflag.FlagSet) {
+	flags.Var(f.min, "min", "set minimum amount value")
+	flags.Var(f.max, "max", "set maximum amount value")
+}
+
+func (f *amountFlags) amountFilter() *ledger.AmountFilter {
+	return &ledger.AmountFilter{
+		Min: f.min.ToDecimal(),
+		Max: f.max.ToDecimal(),
+	}
+}
+
+type decimalValue decimal.Decimal
+
+func newDecimalValue(d decimal.Decimal) *decimalValue {
+	p := &d
+	return (*decimalValue)(p)
+}
+
+func (v *decimalValue) String() string {
+	return v.ToDecimal().StringFixed(2)
+}
+
+func (v *decimalValue) Set(value string) error {
+	d, err := decimal.NewFromString(value)
+	if err != nil {
+		return err
+	}
+
+	*v = decimalValue(d)
+
+	return nil
+}
+
+func (v *decimalValue) Type() string {
+	return "decimal"
+}
+
+func (v *decimalValue) ToDecimal() decimal.Decimal {
+	return decimal.Decimal(*v)
 }
