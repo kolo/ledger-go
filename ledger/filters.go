@@ -1,6 +1,10 @@
 package ledger
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type RecordFilter func(*Record) *Record
 
@@ -32,4 +36,17 @@ func (f *DateRangeFilter) Filter(r *Record) *Record {
 	}
 
 	return r
+}
+
+type AmountFilter struct {
+	Min decimal.Decimal
+	Max decimal.Decimal
+}
+
+func (f *AmountFilter) Filter(r *Record) *Record {
+	if r.Amount.LessThanOrEqual(f.Max) && r.Amount.GreaterThanOrEqual(f.Min) {
+		return r
+	}
+
+	return nil
 }
