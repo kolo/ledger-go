@@ -5,10 +5,19 @@ import (
 
 	"github.com/kolo/ledger-go/ledger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
+type balanceCmd struct {
+	*baseCmd
+
+	monthlyReport bool
+}
+
 func newBalanceCmd() *cobra.Command {
-	balance := newBaseCmd()
+	balance := &balanceCmd{
+		baseCmd: newBaseCmd(),
+	}
 
 	cmd := &cobra.Command{
 		Use: "balance",
@@ -20,9 +29,19 @@ func newBalanceCmd() *cobra.Command {
 	balance.addFlags(cmd.Flags())
 
 	balance.run = func(cfg *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
+		if balance.monthlyReport {
+			ledger.MonthlyBalanceReport(iter, cfg.Assets, stdout)
+			return nil
+		}
 		ledger.BalanceReport(iter, cfg.Assets, stdout)
 		return nil
 	}
 
 	return cmd
+}
+
+func (c *balanceCmd) addFlags(flags *pflag.FlagSet) {
+	c.baseCmd.addFlags(flags)
+
+	flags.BoolVarP(&c.monthlyReport, "monthly", "", false, "display balance by month")
 }
