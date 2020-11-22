@@ -2,15 +2,25 @@ package cmd
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 	"os"
 
 	"github.com/kolo/ledger-go/ledger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
+type exportCmd struct {
+	*baseCmd
+
+	format string
+}
+
 func newExportCmd() *cobra.Command {
-	export := newBaseCmd()
+	export := &exportCmd{
+		baseCmd: newBaseCmd(),
+	}
 
 	cmd := &cobra.Command{
 		Use: "export",
@@ -22,10 +32,22 @@ func newExportCmd() *cobra.Command {
 	export.addFlags(cmd.Flags())
 
 	export.run = func(_ *ledger.Config, iter ledger.RecordIterator, stdout io.Writer) error {
-		return exportToCSV(iter, stdout)
+		switch export.format {
+		case "csv":
+			return exportToCSV(iter, stdout)
+		case "sqlite":
+			return exportToSQLite(iter, stdout)
+		default:
+			return errors.New("unknown export format")
+		}
 	}
 
 	return cmd
+}
+
+func (c *exportCmd) addFlags(flags *pflag.FlagSet) {
+	c.baseCmd.addFlags(flags)
+	flags.StringVarP(&c.format, "format", "f", "csv", "set export format")
 }
 
 func exportToCSV(iter ledger.RecordIterator, output io.Writer) error {
@@ -49,5 +71,9 @@ func exportToCSV(iter ledger.RecordIterator, output io.Writer) error {
 
 	w.Flush()
 
+	return nil
+}
+
+func exportToSQLite(iter ledger.RecordIterator, output io.Writer) error {
 	return nil
 }
