@@ -134,5 +134,7 @@ func exportToLdg(config *ledger.Config, iter ledger.RecordIterator, stdout io.Wr
 			record = append(record, r)
 		}
 	}
+	flushRecord(record)
+
 	return nil
 }
